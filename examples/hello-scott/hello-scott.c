@@ -32,33 +32,53 @@
 
 /**
  * \file
- *         A very simple Contiki application showing how Contiki programs look
+ *         A simple Hello SCOTT node.
  * \author
- *         Adam Dunkels <adam@sics.se>
+ *         Iulisloi Zacarias (github/izacarias)
  */
 
 #include "contiki.h"
+#include <lib/assert.h>
+#include <net/mac/tsch/tsch.h>
+#include <net/mac/tsch/sixtop/sixtop.h>
+#include <stdio.h> /* For printf() -- Not sure if it is mandatory */ 
 
-#include <stdio.h> /* For printf() */
+/* Hard-coded MAC address for the TSCH coordinator */
+/* 00:12:4B:00:04:33:EC:A4 */
+static linkaddr_t coordinator_addr =  {{ 0x00, 0x12, 0x4b, 0x00,
+                                         0x04, 0x33, 0xec, 0xa4 }};
+
 /*---------------------------------------------------------------------------*/
-PROCESS(hello_world_process, "Hello world process");
-AUTOSTART_PROCESSES(&hello_world_process);
+PROCESS(hello_scott_process, "Hello SCOTT process");
+AUTOSTART_PROCESSES(&hello_scott_process);
 /*---------------------------------------------------------------------------*/
-PROCESS_THREAD(hello_world_process, ev, data)
+PROCESS_THREAD(hello_scott_process, ev, data)
 {
   static struct etimer timer;
 
   PROCESS_BEGIN();
+  /* Set the node 0012.4b00.0433.eca4 as the TSCH Coordinator */
+  if(linkaddr_cmp(&coordinator_addr, &linkaddr_node_addr)) {
+    /* Node will act as TSCH Coordinator */
+    tsch_set_coordinator(1);
 
-  /* Setup a periodic timer that expires after 10 seconds. */
-  etimer_set(&timer, CLOCK_SECOND * 10);
+    etimer_set(&timer, CLOCK_SECOND * 10);
+    while(1) {
+      printf("I'm the coordinator! \n");
 
-  while(1) {
-    printf("Hello, SCOTT\n");
+      /* Wait for the periodic timer to expire and then restart the timer. */
+      PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&timer));
+      etimer_reset(&timer);
+    }
+  } else {
+    etimer_set(&timer, CLOCK_SECOND * 10);
+    while(1) {
+      printf("I'm just a node! \n");
 
-    /* Wait for the periodic timer to expire and then restart the timer. */
-    PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&timer));
-    etimer_reset(&timer);
+      /* Wait for the periodic timer to expire and then restart the timer. */
+      PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&timer));
+      etimer_reset(&timer);
+    }
   }
 
   PROCESS_END();

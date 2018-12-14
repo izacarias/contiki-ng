@@ -1,17 +1,9 @@
-A minimal Contiki-NG example based on "Hello, world" code.
+A minimal Contiki-NG example, simple printing out "Hello, world".
+This example runs a full IPv6 stack with 6LoWPAN and RPL.
+It is possible, for example to ping such a node:
 
-To make the project
-
-```bash
-make TARGET=openmote-cc2538 savetarget
-make hello-scott
 ```
-
-Put the Mote on bootloader mode connecting the ON/SLEEP pin to the GND.
-
-```bash
-make hello-scott.upload PORT=/dev/tty.usbserial-A9040YUL
-make PORT=/dev/tty.usbserial-A9040YUL login
+make TARGET=native && sudo ./hello-world.native
 ```
 
 Look for the node's global IPv6, e.g.:
