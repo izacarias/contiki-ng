@@ -31,9 +31,6 @@
 #ifndef PROJECT_CONF_H_
 #define PROJECT_CONF_H_
 
-/* Disabling IPv6 RA */
-#define UIP_CONF_ND6_SEND_RA                0
-
 /* Needed for CC2538 platforms only */
 /* For TSCH we have to use the more accurate crystal oscillator
  * by default the RC oscillator is activated */
@@ -44,8 +41,13 @@
 
 /* Enabling the use of 6top sublayer */
 #define TSCH_CONF_WITH_SIXTOP               1
-#define TSCH_CONF_AUTOSTART                 1
+#define TSCH_CONF_AUTOSTART                 0
 #define TSCH_CONF_DEFAULT_HOPPING_SEQUENCE  TSCH_HOPPING_SEQUENCE_1_1
+
+/* Enabling default IPv6 RA */
+// #define UIP_CONF_ND6_SEND_RA                1
+// #define UIP_CONF_ND6_SEND_NS                1
+// #define UIP_CONF_ND6_SEND_NA                1
 
 /* Setting the log levels */
 #define LOG_CONF_LEVEL_IPV6                 LOG_LEVEL_DBG

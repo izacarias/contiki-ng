@@ -36,45 +36,63 @@
  * \author
  *         Iulisloi Zacarias (github/izacarias)
  */
-
 #include "contiki.h"
 #include <lib/assert.h>
-#include <net/mac/tsch/tsch.h>
-#include <net/mac/tsch/sixtop/sixtop.h>
-#include <stdio.h> /* For printf() -- Not sure if it is mandatory */ 
+#include "sys/node-id.h"
+#include "sys/log.h"
+#include "net/ipv6/uip-ds6-route.h"
+#include "net/ipv6/uip-sr.h"
+#include "net/mac/tsch/tsch.h"
+#include "net/mac/tsch/sixtop/sixtop.h"
+#include "net/routing/routing.h"
+
+#define DEBUG DEBUG_PRINT
+#include "net/ipv6/uip-debug.h"
 
 /* Hard-coded MAC address for the TSCH coordinator */
-/* 00:12:4B:00:04:33:EC:A4 */
+/*   -- MAC: 00:12:4B:00:04:33:EC:A4               */
 static linkaddr_t coordinator_addr =  {{ 0x00, 0x12, 0x4b, 0x00,
                                          0x04, 0x33, 0xec, 0xa4 }};
 
 /*---------------------------------------------------------------------------*/
 PROCESS(hello_scott_process, "Hello SCOTT process");
 AUTOSTART_PROCESSES(&hello_scott_process);
+
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(hello_scott_process, ev, data)
 {
   static struct etimer timer;
+  static int is_coordinator;
 
   PROCESS_BEGIN();
-  /* Set the node 0012.4b00.0433.eca4 as the TSCH Coordinator */
-  if(linkaddr_cmp(&coordinator_addr, &linkaddr_node_addr)) {
-    /* Node will act as TSCH Coordinator */
-    tsch_set_coordinator(1);
 
+  /* Set the node 0012.4b00.0433.eca4 as Coordinator */
+  is_coordinator = linkaddr_cmp(&coordinator_addr, &linkaddr_node_addr);
+  
+
+  if(is_coordinator){
+
+    /* Node will act as TSCH Coordinator and RPL Root */
+    NETSTACK_ROUTING.root_start();
+    NETSTACK_MAC.on();
+
+    /* Loop for coordinator node */
     etimer_set(&timer, CLOCK_SECOND * 10);
     while(1) {
       printf("I'm the coordinator! \n");
-
       /* Wait for the periodic timer to expire and then restart the timer. */
       PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&timer));
       etimer_reset(&timer);
     }
   } else {
+
+    /* Node will act as an ordinary node */
+    NETSTACK_MAC.on();
+
+    /* Loop for ordinary node */
     etimer_set(&timer, CLOCK_SECOND * 10);
     while(1) {
       printf("I'm just a node! \n");
-
       /* Wait for the periodic timer to expire and then restart the timer. */
       PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&timer));
       etimer_reset(&timer);
