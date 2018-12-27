@@ -50,7 +50,7 @@
 #include "net/ipv6/uip-debug.h"
 
 /* Hard-coded MAC address for the TSCH coordinator */
-/*   -- MAC: 00:12:4B:00:04:33:EC:A4               */
+/*   MAC: 00:12:4B:00:04:33:EC:A4               */
 static linkaddr_t coordinator_addr =  {{ 0x00, 0x12, 0x4b, 0x00,
                                          0x04, 0x33, 0xec, 0xa4 }};
 
