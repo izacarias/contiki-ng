@@ -36,18 +36,28 @@
  * by default the RC oscillator is activated */
 #define SYS_CTRL_CONF_OSC32K_USE_XTAL       1
 
-/* Setting the PAN ID 5c07 */
-#define IEEE802154_CONF_PANID            0x5c07
+
+/*******************************************************/
+/******************* Configure TSCH ********************/
+/*******************************************************/
+
+/* IEEE802.15.4 PANID */
+#define IEEE802154_CONF_PANID               0x5c07
 
 /* Enabling the use of 6top sublayer */
 #define TSCH_CONF_WITH_SIXTOP               1
+/* Do not start TSCH at init, wait for NETSTACK_MAC.on() */
 #define TSCH_CONF_AUTOSTART                 0
 #define TSCH_CONF_DEFAULT_HOPPING_SEQUENCE  TSCH_HOPPING_SEQUENCE_1_1
+/* 6TiSCH minimal schedule length. */
+// #define TSCH_SCHEDULE_CONF_DEFAULT_LENGTH   3
 
-/* Enabling default IPv6 RA */
-// #define UIP_CONF_ND6_SEND_RA                1
-// #define UIP_CONF_ND6_SEND_NS                1
-// #define UIP_CONF_ND6_SEND_NA                1
+/* Enable TSCH statistics */
+#define TSCH_STATS_CONF_ON                  1
+/* Enable periodic RSSI sampling for TSCH statistics */
+#define TSCH_STATS_CONF_SAMPLE_NOISE_RSSI   1
+/* Reduce the TSCH stat "decay to normal" period to get printouts more often */
+#define TSCH_STATS_CONF_DECAY_INTERVAL      (60 * CLOCK_SECOND)
 
 /* Setting the log levels */
 #define LOG_CONF_LEVEL_IPV6                 LOG_LEVEL_DBG
@@ -57,5 +67,6 @@
 #define LOG_CONF_LEVEL_TCPIP                LOG_LEVEL_DBG
 #define LOG_CONF_LEVEL_MAC                  LOG_LEVEL_DBG
 #define LOG_CONF_LEVEL_FRAMER               LOG_LEVEL_DBG
+#define TSCH_LOG_CONF_PER_SLOT              1
 
 #endif /* PROJECT_CONF_H_ */
