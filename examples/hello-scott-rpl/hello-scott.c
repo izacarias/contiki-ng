@@ -46,6 +46,9 @@
 #include "net/mac/tsch/sixtop/sixtop.h"
 #include "net/routing/routing.h"
 
+/* Needed to print TSCH Stats */
+#include "net/mac/tsch/tsch-stats.h"
+
 #define DEBUG DEBUG_PRINT
 #include "net/ipv6/uip-debug.h"
 
@@ -61,6 +64,8 @@ AUTOSTART_PROCESSES(&hello_scott_process);
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(hello_scott_process, ev, data)
 {
+  
+  int i;
   static struct etimer timer;
   static int is_coordinator;
 
@@ -92,7 +97,16 @@ PROCESS_THREAD(hello_scott_process, ev, data)
     /* Loop for ordinary node */
     etimer_set(&timer, CLOCK_SECOND * 10);
     while(1) {
-      printf("I'm just a node! \n");
+      printf("NODE - Printint TSCH Stats: \n");
+
+      /* Print TSCH Stats */
+      for(i = 0; i < TSCH_STATS_NUM_CHANNELS; ++i) {
+        printf(" --- channel %u: RSSI: %d  --- EWMA: %u/%u\n",
+          TSCH_STATS_FIRST_CHANNEL + i,
+          tsch_stats.noise_rssi[i] / TSCH_STATS_RSSI_SCALING_FACTOR,
+          tsch_stats.channel_free_ewma[i],
+          TSCH_STATS_BINARY_SCALING_FACTOR);
+      }
       /* Wait for the periodic timer to expire and then restart the timer. */
       PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&timer));
       etimer_reset(&timer);
