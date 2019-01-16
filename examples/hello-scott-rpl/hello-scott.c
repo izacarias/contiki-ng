@@ -37,29 +37,55 @@
  *         Iulisloi Zacarias (github/izacarias)
  */
 #include "contiki.h"
+#include "uip.h"
 #include <lib/assert.h>
 #include "sys/node-id.h"
 #include "sys/log.h"
 #include "net/ipv6/uip-ds6-route.h"
 #include "net/ipv6/uip-sr.h"
+#include "net/ipv6/simple-udp.h"
+#include "net/ipv6/uip-debug.h"
 #include "net/mac/tsch/tsch.h"
 #include "net/mac/tsch/sixtop/sixtop.h"
+#include "net/mac/tsch/tsch-stats.h"
 #include "net/routing/routing.h"
 
-/* Needed to print TSCH Stats */
-#include "net/mac/tsch/tsch-stats.h"
+/* For DEBUG -- LEDS */
+#include "dev/leds.h"
 
 #define DEBUG DEBUG_PRINT
-#include "net/ipv6/uip-debug.h"
+#define LOG_MODULE "App"
+#define LOG_LEVEL LOG_LEVEL_INFO
+#define UDP_CLIENT_PORT	8765
+#define UDP_SERVER_PORT	5678
+
 
 /* Hard-coded MAC address for the TSCH coordinator */
 /*   MAC: 00:12:4B:00:04:33:EC:A4               */
 static linkaddr_t coordinator_addr =  {{ 0x00, 0x12, 0x4b, 0x00,
                                          0x04, 0x33, 0xec, 0xa4 }};
 
+/* For UDP Connection */
+static struct simple_udp_connection udp_conn;
+
 /*---------------------------------------------------------------------------*/
 PROCESS(hello_scott_process, "Hello SCOTT process");
 AUTOSTART_PROCESSES(&hello_scott_process);
+/*---------------------------------------------------------------------------*/
+static void
+udp_rx_callback(struct simple_udp_connection *c,
+         const uip_ipaddr_t *sender_addr,
+         uint16_t sender_port,
+         const uip_ipaddr_t *receiver_addr,
+         uint16_t receiver_port,
+         const uint8_t *data,
+         uint16_t datalen)
+{
+
+  LOG_INFO("Received response '%.*s' from ", datalen, (char *) data);
+  LOG_INFO_6ADDR(sender_addr);
+  LOG_INFO_("\n");
+}
 
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(hello_scott_process, ev, data)
@@ -67,13 +93,23 @@ PROCESS_THREAD(hello_scott_process, ev, data)
   
   int i;
   static struct etimer timer;
+  static struct etimer timer_leds;
   static int is_coordinator;
+  static char msg[32];
+  static unsigned msg_sent_count;
+  uip_ipaddr_t dest_ipaddr;
 
   PROCESS_BEGIN();
 
   /* Set the node 0012.4b00.0433.eca4 as Coordinator */
-  is_coordinator = linkaddr_cmp(&coordinator_addr, &linkaddr_node_addr);
-  
+  is_coordinator = linkaddr_cmp(&coordinator_addr, 
+                                &linkaddr_node_addr);
+
+  /* Registering the UDP connection */
+  simple_udp_register(&udp_conn, UDP_CLIENT_PORT, NULL,
+                      UDP_SERVER_PORT, udp_rx_callback);
+
+  etimer_set(&timer_leds, CLOCK_SECOND);
 
   if(is_coordinator){
 
@@ -95,7 +131,7 @@ PROCESS_THREAD(hello_scott_process, ev, data)
     NETSTACK_MAC.on();
 
     /* Loop for ordinary node */
-    etimer_set(&timer, CLOCK_SECOND * 10);
+    etimer_set(&timer, CLOCK_SECOND * 5);
     while(1) {
       printf("NODE - Printint TSCH Stats: \n");
 
@@ -106,6 +142,20 @@ PROCESS_THREAD(hello_scott_process, ev, data)
           tsch_stats.noise_rssi[i] / TSCH_STATS_RSSI_SCALING_FACTOR,
           tsch_stats.channel_free_ewma[i],
           TSCH_STATS_BINARY_SCALING_FACTOR);
+      }
+      /* Send stats to the DAG Root */
+      if(NETSTACK_ROUTING.node_is_reachable() && NETSTACK_ROUTING.get_root_ipaddr(&dest_ipaddr)) {
+        /* Send stats to the DAG Root */
+        LOG_INFO("Sending request %u to ", msg_sent_count);
+        LOG_INFO_6ADDR(&dest_ipaddr);
+        LOG_INFO_("\n");
+        snprintf(msg, sizeof(msg), "message %d", msg_sent_count);
+        simple_udp_sendto(&udp_conn, msg, strlen(msg), &dest_ipaddr);
+        msg_sent_count++;
+        leds_single_toggle(LEDS_LED2);
+      }
+      else {
+        LOG_INFO("Not reachable yet\n");
       }
       /* Wait for the periodic timer to expire and then restart the timer. */
       PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&timer));
