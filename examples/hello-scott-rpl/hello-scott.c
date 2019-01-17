@@ -116,6 +116,7 @@ PROCESS_THREAD(hello_scott_process, ev, data)
     /* Node will act as TSCH Coordinator and RPL Root */
     NETSTACK_ROUTING.root_start();
     NETSTACK_MAC.on();
+    
     /* Registering the UDP connection */
     simple_udp_register(&udp_conn, UDP_SERVER_PORT, NULL,
                         UDP_CLIENT_PORT, udp_rx_callback);
@@ -128,6 +129,7 @@ PROCESS_THREAD(hello_scott_process, ev, data)
       PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&timer));
       etimer_reset(&timer);
     }
+
   } else {
 
     /* Node will act as an ordinary node */
